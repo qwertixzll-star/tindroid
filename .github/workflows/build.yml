@@ -21,14 +21,17 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 1. Исправляем ошибку памяти
+      # 1. Исправляем ошибку памяти (с защитой от склеивания строк)
       - name: Fix gradle.properties (Memory)
         run: |
+          # Удаляем старую строку, чтобы не мешала
           sed -i '/MaxPermSize/d' gradle.properties
+          # ВАЖНО: Добавляем пустую строку, чтобы разлепить настройки
+          echo "" >> gradle.properties
+          # Теперь безопасно добавляем правильные настройки
           echo "org.gradle.jvmargs=-Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> gradle.properties
 
-      # 2. Исправляем ошибку с Git (begin 1, end 0)
-      # Мы просто заменяем вызов функции gitVersion... на жестко прописанные цифры
+      # 2. Убираем зависимость от Git (хардкодим версию)
       - name: Fix build.gradle (Hardcode version)
         run: |
           sed -i 's/version_code = gitVersionCode()/version_code = 1/' build.gradle
