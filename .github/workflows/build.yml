@@ -21,23 +21,41 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 1. Исправляем ошибку памяти (с защитой от склеивания строк)
+      # 1. Исправляем память (с защитой от склеивания строк)
       - name: Fix gradle.properties (Memory)
         run: |
-          # Удаляем старую строку, чтобы не мешала
           sed -i '/MaxPermSize/d' gradle.properties
-          # ВАЖНО: Добавляем пустую строку, чтобы разлепить настройки
           echo "" >> gradle.properties
-          # Теперь безопасно добавляем правильные настройки
           echo "org.gradle.jvmargs=-Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> gradle.properties
 
-      # 2. Убираем зависимость от Git (хардкодим версию)
+      # 2. Исправляем ошибку Git (хардкодим версию)
       - name: Fix build.gradle (Hardcode version)
         run: |
           sed -i 's/version_code = gitVersionCode()/version_code = 1/' build.gradle
           sed -i 's/version_name = gitVersionName()/version_name = "1.0.0-debug"/' build.gradle
 
-      # 3. Создаем google-services.json
+      # 3. НОВОЕ: Исправляем устаревшие SDK (compileSdkVersion -> compileSdk)
+      - name: Fix app/build.gradle (Update SDK syntax)
+        run: |
+          sed -i 's/compileSdkVersion/compileSdk/g' app/build.gradle
+          sed -i 's/minSdkVersion/minSdk/g' app/build.gradle
+          sed -i 's/targetSdkVersion/targetSdk/g' app/build.gradle
+
+      # 4. НОВОЕ: Создаем "пустышки" ключей, чтобы сборка не падала
+      - name: Create dummy keystore
+        run: |
+          # Генерируем тестовый ключ
+          keytool -genkey -v -keystore app/dummy.jks -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          
+          # Создаем файл настроек, указывающий на этот ключ
+          cat <<EOF > keystore.properties
+          storeFile=dummy.jks
+          storePassword=android
+          keyAlias=androiddebugkey
+          keyPassword=android
+          EOF
+
+      # 5. Создаем google-services.json
       - name: Create google-services.json
         run: |
           cat <<EOF > app/google-services.json
