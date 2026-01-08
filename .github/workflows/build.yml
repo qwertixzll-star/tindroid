@@ -1,0 +1,37 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Создаем пустой файл конфигурации Google, чтобы сборка не ругалась на его отсутствие
+      - name: Create dummy google-services.json
+        run: echo '{}' > app/google-services.json
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tindroid-Debug
+          path: app/build/outputs/apk/debug/*.apk
+          
