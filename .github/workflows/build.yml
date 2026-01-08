@@ -19,7 +19,14 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # Создаем пустой файл конфигурации Google, чтобы сборка не ругалась на его отсутствие
+      # --- ВОТ ЭТО ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+      # Мы удаляем старую настройку памяти и прописываем новую, правильную для Java 17
+      - name: Fix gradle.properties (Remove MaxPermSize)
+        run: |
+          touch gradle.properties
+          sed -i '/org.gradle.jvmargs/d' gradle.properties
+          echo "org.gradle.jvmargs=-Xmx3072m -Dfile.encoding=UTF-8" >> gradle.properties
+
       - name: Create dummy google-services.json
         run: echo '{}' > app/google-services.json
 
