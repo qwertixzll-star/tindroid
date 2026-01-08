@@ -10,12 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Скачиваем репозиторий ПОЛНОСТЬЮ (с тегами, чтобы не было ошибки begin 1, end 0)
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
-      # 2. Настраиваем Java 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -23,15 +21,20 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 3. Исправляем ошибку памяти (MaxPermSize) в gradle.properties
-      - name: Fix gradle.properties
+      # 1. Исправляем ошибку памяти
+      - name: Fix gradle.properties (Memory)
         run: |
-          # Удаляем строку с устаревшим MaxPermSize
           sed -i '/MaxPermSize/d' gradle.properties
-          # Добавляем правильные настройки памяти
           echo "org.gradle.jvmargs=-Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> gradle.properties
 
-      # 4. Создаем настоящий google-services.json (который ты прислал)
+      # 2. Исправляем ошибку с Git (begin 1, end 0)
+      # Мы просто заменяем вызов функции gitVersion... на жестко прописанные цифры
+      - name: Fix build.gradle (Hardcode version)
+        run: |
+          sed -i 's/version_code = gitVersionCode()/version_code = 1/' build.gradle
+          sed -i 's/version_name = gitVersionName()/version_name = "1.0.0-debug"/' build.gradle
+
+      # 3. Создаем google-services.json
       - name: Create google-services.json
         run: |
           cat <<EOF > app/google-services.json
@@ -67,15 +70,12 @@ jobs:
           }
           EOF
 
-      # 5. Даем права на выполнение скрипта сборки
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 6. Запускаем сборку
       - name: Build APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug
 
-      # 7. Загружаем готовый файл, чтобы ты мог его скачать
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
