@@ -21,7 +21,7 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 1. Исправляем память (с защитой от склеивания строк)
+      # 1. Исправляем память
       - name: Fix gradle.properties (Memory)
         run: |
           sed -i '/MaxPermSize/d' gradle.properties
@@ -34,20 +34,18 @@ jobs:
           sed -i 's/version_code = gitVersionCode()/version_code = 1/' build.gradle
           sed -i 's/version_name = gitVersionName()/version_name = "1.0.0-debug"/' build.gradle
 
-      # 3. НОВОЕ: Исправляем устаревшие SDK (compileSdkVersion -> compileSdk)
+      # 3. Исправляем устаревшие SDK (compileSdkVersion -> compileSdk)
       - name: Fix app/build.gradle (Update SDK syntax)
         run: |
           sed -i 's/compileSdkVersion/compileSdk/g' app/build.gradle
           sed -i 's/minSdkVersion/minSdk/g' app/build.gradle
           sed -i 's/targetSdkVersion/targetSdk/g' app/build.gradle
 
-      # 4. НОВОЕ: Создаем "пустышки" ключей, чтобы сборка не падала
+      # 4. Создаем "пустышки" ключей
       - name: Create dummy keystore
         run: |
-          # Генерируем тестовый ключ
           keytool -genkey -v -keystore app/dummy.jks -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           
-          # Создаем файл настроек, указывающий на этот ключ
           cat <<EOF > keystore.properties
           storeFile=dummy.jks
           storePassword=android
@@ -55,7 +53,8 @@ jobs:
           keyPassword=android
           EOF
 
-      # 5. Создаем google-services.json
+      # 5. Создаем ИСПРАВЛЕННЫЙ google-services.json
+      # ВНИМАНИЕ: Я изменил package_name на co.tinode.tindroidx
       - name: Create google-services.json
         run: |
           cat <<EOF > app/google-services.json
@@ -71,7 +70,7 @@ jobs:
                 "client_info": {
                   "mobilesdk_app_id": "1:399896978162:android:fc968b323d8d04a7c5666b",
                   "android_client_info": {
-                    "package_name": "com.company.message"
+                    "package_name": "co.tinode.tindroidx"
                   }
                 },
                 "oauth_client": [],
